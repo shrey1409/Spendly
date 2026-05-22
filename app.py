@@ -1,6 +1,20 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, g
+from database.db import init_db, seed_db
 
 app = Flask(__name__)
+app.config['DATABASE'] = 'database/spendly.db'
+
+
+@app.teardown_appcontext
+def close_db(_exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+
+with app.app_context():
+    init_db()
+    seed_db()
 
 
 # ------------------------------------------------------------------ #
@@ -15,7 +29,7 @@ def landing():
 @app.route("/register")
 def register():
     return render_template("register.html")
- 
+
 
 @app.route("/login")
 def login():
