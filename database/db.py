@@ -39,6 +39,17 @@ def init_db():
     db.commit()
 
 
+def create_user(name, email, password_hash):
+    db = get_db()
+    db.execute(
+        'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+        (name, email, password_hash)
+    )
+    user_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+    db.commit()
+    return user_id
+
+
 def seed_db():
     db = get_db()
     if db.execute('SELECT COUNT(*) FROM users').fetchone()[0] > 0:
@@ -46,7 +57,7 @@ def seed_db():
 
     db.execute(
         'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-        ('Demo User', 'demo@spendly.com', generate_password_hash('demo123'))
+        ('Demo User', 'demo@spendly.com', generate_password_hash('demo123', method='pbkdf2:sha256'))
     )
     user_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
 
