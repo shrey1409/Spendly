@@ -50,6 +50,12 @@ def create_user(name, email, password_hash):
     return user_id
 
 
+def get_user_by_email(email):
+    return get_db().execute(
+        'SELECT * FROM users WHERE email = ?', (email,)
+    ).fetchone()
+
+
 def seed_db():
     db = get_db()
     if db.execute('SELECT COUNT(*) FROM users').fetchone()[0] > 0:
