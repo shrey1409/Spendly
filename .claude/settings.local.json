@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -si http://localhost:5001/profile)",
+      "Bash(curl -si -c /tmp/spendly-cookies.txt -X POST http://localhost:5001/login -d 'email=demo@spendly.com&password=demo123')",
+      "Bash(curl -si -b /tmp/spendly-cookies.txt http://localhost:5001/profile)",
+      "Bash(curl -s -b /tmp/spendly-cookies.txt http://localhost:5001/profile)",
+      "Bash(curl -si -b \"session=\" http://localhost:5001/profile)"
+    ]
+  }
+}
