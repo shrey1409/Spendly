@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — Spendly{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="analytics-page">
+    <div class="analytics-inner">
+
+        <!-- Status badge -->
+        <span class="analytics-badge">Coming Soon</span>
+
+        <!-- Headline -->
+        <h1 class="analytics-title">Your money,&nbsp;<em>visualised</em></h1>
+        <p class="analytics-subtitle">
+            Advanced analytics and spending insights are being crafted for you.
+            Track trends, uncover patterns, and take control of your finances
+            like never before.
+        </p>
+
+        <!-- Blurred chart preview -->
+        <div class="analytics-preview">
+            <div class="analytics-preview-blur">
+                <p class="analytics-chart-label">Monthly spending — last 12 months</p>
+                <div class="analytics-mock-bars">
+                    <div class="analytics-mock-bar" style="height:42%"></div>
+                    <div class="analytics-mock-bar" style="height:55%"></div>
+                    <div class="analytics-mock-bar" style="height:70%"></div>
+                    <div class="analytics-mock-bar" style="height:48%"></div>
+                    <div class="analytics-mock-bar" style="height:82%"></div>
+                    <div class="analytics-mock-bar" style="height:60%"></div>
+                    <div class="analytics-mock-bar" style="height:90%"></div>
+                    <div class="analytics-mock-bar" style="height:74%"></div>
+                    <div class="analytics-mock-bar" style="height:63%"></div>
+                    <div class="analytics-mock-bar" style="height:100%"></div>
+                    <div class="analytics-mock-bar" style="height:85%"></div>
+                    <div class="analytics-mock-bar" style="height:95%"></div>
+                </div>
+            </div>
+            <div class="analytics-preview-overlay">
+                Preview coming soon
+            </div>
+        </div>
+
+        <!-- Feature preview cards -->
+        <div class="analytics-features">
+
+            <div class="analytics-feature">
+                <div class="analytics-feature-icon">
+                    <i data-lucide="bar-chart-2"></i>
+                </div>
+                <h3>Spending Trends</h3>
+                <p>
+                    See how your spending evolves month-over-month
+                    across every category with interactive bar charts.
+                </p>
+            </div>
+
+            <div class="analytics-feature">
+                <div class="analytics-feature-icon">
+                    <i data-lucide="pie-chart"></i>
+                </div>
+                <h3>Category Breakdown</h3>
+                <p>
+                    Understand exactly where your money goes with
+                    rich, drillable category breakdowns and percentages.
+                </p>
+            </div>
+
+            <div class="analytics-feature">
+                <div class="analytics-feature-icon">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <h3>Smart Insights</h3>
+                <p>
+                    Automatic observations that surface unusual patterns,
+                    big-ticket spends, and potential savings opportunities.
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Actions -->
+        <div class="analytics-actions">
+            <a href="{{ url_for('profile') }}" class="btn-primary">Back to Dashboard</a>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}
