@@ -1,6 +1,57 @@
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 from database.db import get_db
+
+
+# ------------------------------------------------------------------ #
+# Date-filter helpers                                                 #
+# ------------------------------------------------------------------ #
+
+def _date_filter(date_from, date_to):
+    """Return (clause_str, params_tuple) for an optional inclusive date range.
+
+    Both date_from and date_to must be non-None ISO strings (YYYY-MM-DD) for
+    the filter to activate.  When either is None, returns ('', ()) so the
+    caller's WHERE clause is unchanged.
+    """
+    if date_from is not None and date_to is not None:
+        return " AND date BETWEEN ? AND ?", (date_from, date_to)
+    return "", ()
+
+
+def build_date_presets(today=None):
+    """Return a dict of named preset date ranges, each with date_from/date_to
+    ISO strings.  Pass today as a date object to make the function testable
+    without real-time dependency; defaults to date.today().
+    """
+    today = today or date.today()
+    first_of_month = today.replace(day=1)
+    return {
+        "this_month": {
+            "date_from": first_of_month.strftime("%Y-%m-%d"),
+            "date_to":   today.strftime("%Y-%m-%d"),
+        },
+        "last_3_months": {
+            "date_from": (today - timedelta(days=90)).strftime("%Y-%m-%d"),
+            "date_to":   today.strftime("%Y-%m-%d"),
+        },
+        "last_6_months": {
+            "date_from": (today - timedelta(days=180)).strftime("%Y-%m-%d"),
+            "date_to":   today.strftime("%Y-%m-%d"),
+        },
+    }
+
+
+def detect_active_preset(date_from_str, date_to_str, presets):
+    """Return the key of the matching preset ('this_month', 'last_3_months',
+    'last_6_months', 'all_time') or None when a custom range is active.
+    """
+    if date_from_str is None and date_to_str is None:
+        return "all_time"
+    for name, bounds in presets.items():
+        if date_from_str == bounds["date_from"] and date_to_str == bounds["date_to"]:
+            return name
+    return None  # custom range
 
 
 # ------------------------------------------------------------------ #
@@ -29,18 +80,23 @@ def get_user_by_id(user_id):
 # Summary stats                                                       #
 # ------------------------------------------------------------------ #
 
-def get_summary_stats(user_id):
-    """Return dict {total_spent (str), transaction_count (int), top_category (str)}."""
+def get_summary_stats(user_id, date_from=None, date_to=None):
+    """Return dict {total_spent (str), transaction_count (int), top_category (str)}.
+
+    When date_from and date_to are both provided (YYYY-MM-DD strings), only
+    expenses within that inclusive range are included.
+    """
+    date_clause, date_params = _date_filter(date_from, date_to)
     db = get_db()
     agg = db.execute(
         'SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS cnt '
-        'FROM expenses WHERE user_id = ?',
-        (user_id,)
+        'FROM expenses WHERE user_id = ?' + date_clause,
+        (user_id,) + date_params
     ).fetchone()
     top = db.execute(
-        'SELECT category FROM expenses WHERE user_id = ? '
+        'SELECT category FROM expenses WHERE user_id = ?' + date_clause + ' '
         'GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1',
-        (user_id,)
+        (user_id,) + date_params
     ).fetchone()
     return {
         'total_spent': f"₹{agg['total']:,.0f}",
@@ -53,14 +109,19 @@ def get_summary_stats(user_id):
 # Transaction history                                                 #
 # ------------------------------------------------------------------ #
 
-def get_recent_transactions(user_id, limit=10):
+def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """Return list of dicts ordered newest-first.
     Each dict: {date: 'DD Mon YYYY', description, category, amount: '₹X,XXX'}
+
+    When date_from and date_to are both provided (YYYY-MM-DD strings), only
+    expenses within that inclusive range are included.
     """
+    date_clause, date_params = _date_filter(date_from, date_to)
     rows = get_db().execute(
         'SELECT date, description, category, amount '
-        'FROM expenses WHERE user_id = ? ORDER BY date DESC LIMIT ?',
-        (user_id, limit)
+        'FROM expenses WHERE user_id = ?' + date_clause +
+        ' ORDER BY date DESC LIMIT ?',
+        (user_id,) + date_params + (limit,)
     ).fetchall()
     result = []
     for row in rows:
@@ -78,16 +139,20 @@ def get_recent_transactions(user_id, limit=10):
 # Category breakdown                                                  #
 # ------------------------------------------------------------------ #
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     """Return list of dicts [{name, amount: '₹X,XXX', pct: int}, ...] ordered by
     amount DESC. Integer pct values are adjusted so they sum to exactly 100.
     Returns [] when the user has no expenses.
+
+    When date_from and date_to are both provided (YYYY-MM-DD strings), only
+    expenses within that inclusive range are included.
     """
+    date_clause, date_params = _date_filter(date_from, date_to)
     rows = get_db().execute(
         'SELECT category, SUM(amount) AS cat_total '
-        'FROM expenses WHERE user_id = ? '
+        'FROM expenses WHERE user_id = ?' + date_clause + ' '
         'GROUP BY category ORDER BY cat_total DESC',
-        (user_id,)
+        (user_id,) + date_params
     ).fetchall()
     if not rows:
         return []
