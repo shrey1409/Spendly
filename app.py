@@ -1,14 +1,17 @@
+import os
 import sqlite3
-from flask import Flask, render_template, g, request, redirect, url_for, session, abort
+from datetime import datetime
+from flask import Flask, render_template, g, request, redirect, url_for, session, abort, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import init_db, seed_db, create_user, get_user_by_email
 from database.queries import (
     get_user_by_id, get_summary_stats,
     get_recent_transactions, get_category_breakdown,
+    build_date_presets, detect_active_preset,
 )
 
 app = Flask(__name__)
-app.secret_key = "spendly-dev-secret"
+app.secret_key = os.environ.get("SECRET_KEY", "spendly-dev-secret")
 app.config['DATABASE'] = 'database/spendly.db'
 
 
@@ -109,11 +112,74 @@ def profile():
     user = get_user_by_id(uid)
     if user is None:
         abort(404)
-    stats = get_summary_stats(uid)
-    transactions = get_recent_transactions(uid)
-    categories = get_category_breakdown(uid)
-    return render_template("profile.html", user=user, stats=stats,
-                           transactions=transactions, categories=categories)
+
+    # ------------------------------------------------------------------ #
+    # 1. Extract raw query params                                         #
+    # ------------------------------------------------------------------ #
+    raw_from = request.args.get("date_from", "").strip()
+    raw_to   = request.args.get("date_to",   "").strip()
+
+    # ------------------------------------------------------------------ #
+    # 2. Validate: attempt ISO parse; silently discard malformed values   #
+    # ------------------------------------------------------------------ #
+    date_from = None
+    date_to   = None
+
+    try:
+        if raw_from:
+            date_from = datetime.strptime(raw_from, "%Y-%m-%d").date()
+    except ValueError:
+        pass  # malformed — treat as absent
+
+    try:
+        if raw_to:
+            date_to = datetime.strptime(raw_to, "%Y-%m-%d").date()
+    except ValueError:
+        pass  # malformed — treat as absent
+
+    # ------------------------------------------------------------------ #
+    # 3. Logical validation                                               #
+    # ------------------------------------------------------------------ #
+    if date_from is not None and date_to is not None and date_from > date_to:
+        flash("Start date must be before end date.", "error")
+        date_from = None
+        date_to   = None
+    elif (date_from is None) != (date_to is None):
+        # Exactly one bound provided — filter would silently do nothing
+        flash("Please provide both a start date and an end date to filter.", "error")
+        date_from = None
+        date_to   = None
+
+    # ------------------------------------------------------------------ #
+    # 4. Convert validated date objects → ISO strings for SQL             #
+    # ------------------------------------------------------------------ #
+    date_from_str = date_from.strftime("%Y-%m-%d") if date_from else None
+    date_to_str   = date_to.strftime("%Y-%m-%d")   if date_to   else None
+
+    # ------------------------------------------------------------------ #
+    # 5. Preset date ranges and active-preset detection (via helpers)     #
+    # ------------------------------------------------------------------ #
+    presets       = build_date_presets()
+    active_preset = detect_active_preset(date_from_str, date_to_str, presets)
+
+    # ------------------------------------------------------------------ #
+    # 6. Query with (possibly filtered) params                            #
+    # ------------------------------------------------------------------ #
+    stats        = get_summary_stats(uid, date_from=date_from_str, date_to=date_to_str)
+    transactions = get_recent_transactions(uid, date_from=date_from_str, date_to=date_to_str)
+    categories   = get_category_breakdown(uid, date_from=date_from_str, date_to=date_to_str)
+
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
+        date_from=date_from_str,
+        date_to=date_to_str,
+        presets=presets,
+        active_preset=active_preset,
+    )
 
 
 @app.route("/expenses/add")
@@ -132,4 +198,5 @@ def delete_expense(id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(debug=debug, port=5001)
