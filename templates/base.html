@@ -20,6 +20,12 @@
             </a>
             <div class="nav-links">
                 {% if session.get("user_id") %}
+                    <a href="{{ url_for('profile') }}"
+                       class="{% if request.endpoint == 'profile' %}nav-link--active{% endif %}">Dashboard</a>
+                    <a href="{{ url_for('analytics') }}"
+                       class="{% if request.endpoint == 'analytics' %}nav-link--active{% endif %}">Analytics</a>
+                    <a href="{{ url_for('add_expense') }}"
+                       class="{% if request.endpoint == 'add_expense' %}nav-link--active{% endif %}">Add Expense</a>
                     <a href="{{ url_for('logout') }}">Sign out</a>
                 {% else %}
                     <a href="{{ url_for('login') }}">Sign in</a>
@@ -47,8 +53,8 @@
             <span class="brand-icon">◈</span>
             <span class="footer-name">Spendly</span>
             <p class="footer-copy">Track every rupee. Own your finances.</p>
-            <a href="/terms">Terms and Conditions</a>
-            <a href="/privacy">Privacy Policy</a>
+            <a href="{{ url_for('terms') }}">Terms and Conditions</a>
+            <a href="{{ url_for('privacy') }}">Privacy Policy</a>
         </div>
     </footer>
 

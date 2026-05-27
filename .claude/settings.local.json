@@ -5,7 +5,14 @@
       "Bash(curl -si -c /tmp/spendly-cookies.txt -X POST http://localhost:5001/login -d 'email=demo@spendly.com&password=demo123')",
       "Bash(curl -si -b /tmp/spendly-cookies.txt http://localhost:5001/profile)",
       "Bash(curl -s -b /tmp/spendly-cookies.txt http://localhost:5001/profile)",
-      "Bash(curl -si -b \"session=\" http://localhost:5001/profile)"
+      "Bash(curl -si -b \"session=\" http://localhost:5001/profile)",
+      "mcp__sqlite__list_tables",
+      "Bash(sqlite3 *)",
+      "mcp__plugin_figma_figma__get_design_context",
+      "mcp__plugin_figma_figma__whoami",
+      "mcp__github__get_me",
+      "mcp__github__search_repositories",
+      "mcp__github__list_issues"
     ]
   }
 }

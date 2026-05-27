@@ -172,3 +172,26 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
         item['amount'] = f"₹{item['_raw']:,.0f}"
         del item['_raw']
     return result
+
+
+# ------------------------------------------------------------------ #
+# Expense mutations                                                   #
+# ------------------------------------------------------------------ #
+
+def insert_expense(user_id, amount, category, expense_date, description):
+    """Insert a new expense row and commit.
+
+    Args:
+        user_id (int): FK to users.id
+        amount (float): positive monetary value
+        category (str): one of the fixed VALID_CATEGORIES
+        expense_date (str): ISO date string YYYY-MM-DD
+        description (str | None): optional free-text note
+    """
+    db = get_db()
+    db.execute(
+        'INSERT INTO expenses (user_id, amount, category, date, description)'
+        ' VALUES (?, ?, ?, ?, ?)',
+        (user_id, amount, category, expense_date, description)
+    )
+    db.commit()
