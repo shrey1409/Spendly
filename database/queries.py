@@ -111,14 +111,14 @@ def get_summary_stats(user_id, date_from=None, date_to=None):
 
 def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """Return list of dicts ordered newest-first.
-    Each dict: {date: 'DD Mon YYYY', description, category, amount: '₹X,XXX'}
+    Each dict: {id, date: 'DD Mon YYYY', description, category, amount: '₹X,XXX'}
 
     When date_from and date_to are both provided (YYYY-MM-DD strings), only
     expenses within that inclusive range are included.
     """
     date_clause, date_params = _date_filter(date_from, date_to)
     rows = get_db().execute(
-        'SELECT date, description, category, amount '
+        'SELECT id, date, description, category, amount '
         'FROM expenses WHERE user_id = ?' + date_clause +
         ' ORDER BY date DESC LIMIT ?',
         (user_id,) + date_params + (limit,)
@@ -127,6 +127,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     for row in rows:
         dt = datetime.strptime(row['date'], '%Y-%m-%d')
         result.append({
+            'id': row['id'],
             'date': dt.strftime('%d %b %Y'),
             'description': row['description'] or '',
             'category': row['category'],
@@ -177,6 +178,26 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
 # ------------------------------------------------------------------ #
 # Expense mutations                                                   #
 # ------------------------------------------------------------------ #
+
+def get_expense_by_id(expense_id, user_id):
+    """Return a single expense row as sqlite3.Row if it exists and belongs to user_id, else None."""
+    return get_db().execute(
+        'SELECT id, user_id, amount, category, date, description '
+        'FROM expenses WHERE id = ? AND user_id = ?',
+        (expense_id, user_id)
+    ).fetchone()
+
+
+def update_expense(expense_id, user_id, amount, category, expense_date, description):
+    """Update an existing expense row. Scoped to user_id to prevent cross-user edits."""
+    db = get_db()
+    db.execute(
+        'UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? '
+        'WHERE id = ? AND user_id = ?',
+        (amount, category, expense_date, description, expense_id, user_id)
+    )
+    db.commit()
+
 
 def insert_expense(user_id, amount, category, expense_date, description):
     """Insert a new expense row and commit.

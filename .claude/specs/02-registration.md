@@ -4,7 +4,7 @@
 Implement user registration so new visitors can create a Spendly account.
 The existing `GET /register` stub and `register.html` template are already in place;
 this step adds the `POST /register` handler, a `create_user()` DB helper, server-side
-validation, and a redirect to the login page on success. It is the first feature that
+validation, and a redirect to the login page on success also the user is shown a success message. It is the first feature that
 writes user-supplied data to the database.
 
 ## Depends on
@@ -28,7 +28,6 @@ raise `sqlite3.IntegrityError`, which the route must catch.
 ## Templates
 - **Modify:** `templates/register.html`
   - Change `action="/register"` → `action="{{ url_for('register') }}"` (never hardcode URLs)
-  - Add a `confirm_password` field (type password) after the password field
   - The `{% if error %}` block is already present — no further changes needed
 
 ## Files to change
@@ -54,10 +53,7 @@ No new dependencies.
   `error="An account with that email already exists."`
 - Validate in the route (not the DB helper): name non-empty, valid email format
   (trust the browser `type="email"` input — no regex needed server-side),
-  password ≥ 8 characters, password matches confirm_password
-- Mismatch check order: length first, then mismatch — so the user sees the length
-  error before the mismatch error if both apply
-- `confirm_password` is never stored or passed to `create_user()` — validation only
+  password ≥ 8 characters
 - On success: `redirect(url_for('login'))`
 - On validation failure: `render_template('register.html', error=..., name=..., email=...)`
   so the user doesn't have to retype non-password fields
@@ -65,10 +61,10 @@ No new dependencies.
 ## Definition of done
 - [ ] `POST /register` with valid data creates a new row in `users` with a hashed password
 - [ ] Submitting a duplicate email re-renders the form with an error message (no crash)
+- [ ] Submitting with mismatched passwords re-renders the form with an error message, no DB insert
 - [ ] Submitting a password shorter than 8 characters re-renders the form with an error message
 - [ ] Submitting an empty name re-renders the form with an error message
 - [ ] Successful registration redirects to `/login`
 - [ ] Previously entered name and email are preserved in the form on validation failure
-- [ ] Submitting with mismatched passwords re-renders the form with an error message, no DB insert
 - [ ] The form action uses `url_for('register')`, not a hardcoded string
 - [ ] `app.py` has no inline SQL — all DB access goes through `database/db.py`

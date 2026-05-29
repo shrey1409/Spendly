@@ -7,7 +7,7 @@ def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(
             current_app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
+            detect_types=sqlite3.PARSE_DECLTYPES                                                                                                                                                                                                   
         )
         g.db.row_factory = sqlite3.Row
         g.db.execute('PRAGMA foreign_keys = ON')
@@ -63,7 +63,7 @@ def seed_db():
 
     db.execute(
         'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-        ('Demo User', 'demo@spendly.com', generate_password_hash('demo123', method='pbkdf2:sha256'))
+        ('Demo User', 'demo@spendly.com', generate_password_hash('demo123'))
     )
     user_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
 
