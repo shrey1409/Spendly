@@ -199,6 +199,16 @@ def update_expense(expense_id, user_id, amount, category, expense_date, descript
     db.commit()
 
 
+def delete_expense(expense_id, user_id):
+    """Delete an expense row scoped to user_id. No-op if not found or not owned."""
+    db = get_db()
+    db.execute(
+        'DELETE FROM expenses WHERE id = ? AND user_id = ?',
+        (expense_id, user_id)
+    )
+    db.commit()
+
+
 def insert_expense(user_id, amount, category, expense_date, description):
     """Insert a new expense row and commit.
 
